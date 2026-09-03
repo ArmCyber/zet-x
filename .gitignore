@@ -1,0 +1,6 @@
+.idea/
+.claude/
+.cursor/
+node_modules/
+dist/
+package-lock.json

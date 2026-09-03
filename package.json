@@ -1,0 +1,53 @@
+{
+  "name": "zet-x",
+  "version": "1.0.5",
+  "type": "module",
+  "description": "A project-level task runner for teams. Define dev commands in a config file, run them with x <command>.",
+  "bin": {
+    "x": "./bin/x.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "engines": {
+    "node": "^18.19.0 || >=20.6.0"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "templates"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ArmCyber/zet-x.git"
+  },
+  "author": "ArmCyber",
+  "homepage": "https://github.com/ArmCyber/zet-x",
+  "bugs": {
+    "url": "https://github.com/ArmCyber/zet-x/issues"
+  },
+  "keywords": [
+    "task-runner",
+    "cli",
+    "scripts",
+    "dev-tools",
+    "commands",
+    "project-runner",
+    "zero-dependency"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "build": "rm -rf dist && tsc && node scripts/generate-dts.mjs",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.2",
+    "typescript": "^5.9.3"
+  }
+}
