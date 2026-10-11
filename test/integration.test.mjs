@@ -370,6 +370,20 @@ register('ping').run('echo', 'loader-works');
     assert.match(result.stdout, /loader-works/);
   });
 
+  it("registers the loader hook without a Node deprecation warning", async () => {
+    const dir = tmpDir();
+    writeRealConfig(
+      dir,
+      `
+import { register } from 'zet-x';
+register('ping').run('echo', 'loader-works');
+`
+    );
+    const result = await run(dir, ["ping"]);
+    assert.equal(result.code, 0);
+    assert.doesNotMatch(result.stderr, /DeprecationWarning/);
+  });
+
   it("shows friendly error for duplicate command (no raw stack trace)", async () => {
     const dir = tmpDir();
     writeConfig(

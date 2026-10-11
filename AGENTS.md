@@ -29,7 +29,7 @@ src/              TypeScript source (compiled to dist/)
   publish.ts      x cli publish ai/ide handlers
   types-generator.ts  Auto-regenerates .x/index.d.ts
   loader.ts       ESM resolve hook (maps 'zet-x' → ./index.js)
-  register.ts     Calls module.register() to load loader
+  register.ts     Registers the loader hook via module.registerHooks(), falling back to module.register() on older Node
   runner.ts       Entry point spawned by bin/x.mjs — imports config, calls init()
 dist/             Compiled JS output (gitignored)
 bin/x.mjs         CLI entry point (not compiled, stays .mjs)

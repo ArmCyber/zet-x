@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- Node.js 26 printed `[DEP0205] DeprecationWarning: module.register() is deprecated` on every run. The loader hook is now registered with `module.registerHooks()` where available (Node >=22.15 / >=23.5) and falls back to `module.register()` on older versions.
+
 ## [1.0.5]
 
 ### Changed
