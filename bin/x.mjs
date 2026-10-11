@@ -130,6 +130,17 @@ if (major > 20 || (major === 20 && minor >= 6) || (major === 18 && minor >= 19))
 const runnerPath = join(pkgRoot, "dist", "runner.js");
 const projectRoot = dirname(configPath);
 
+// Daily update check: the note (if any) is printed once the command has finished
+let printUpdateNotice = () => {};
+try {
+  const { startUpdateCheck } = await import(
+    pathToFileURL(join(pkgRoot, "dist", "update-check.js")).href
+  );
+  printUpdateNotice = startUpdateCheck(cliArgs);
+} catch {
+  // Best-effort: never get in the way of the command
+}
+
 const child = spawn(
   process.execPath,
   [...nodeArgs, runnerPath, configPath, ...process.argv.slice(2)],
@@ -146,6 +157,7 @@ process.on("SIGTERM", () => child.kill("SIGTERM"));
 process.on("SIGINT", () => child.kill("SIGINT"));
 
 child.on("close", (code, signal) => {
+  printUpdateNotice();
   if (signal) {
     process.kill(process.pid, signal);
   } else {

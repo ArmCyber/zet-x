@@ -1,6 +1,6 @@
 {
   "name": "zet-x",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "type": "module",
   "description": "A project-level task runner for teams. Define dev commands in a config file, run them with x <command>.",
   "bin": {

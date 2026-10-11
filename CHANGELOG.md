@@ -1,6 +1,12 @@
 # Changelog
 
-## [Unreleased]
+## [1.0.7]
+
+### Added
+
+- Update check — once a day `x` checks the npm registry in the background and, when a newer version of `zet-x` is available, prints a note after the command finishes: `Please run "npm install -g zet-x" to update.` It is only a note; nothing is enforced. If npm is unreachable the check is skipped silently and retried on the next run. Skipped when stderr is not a terminal, in CI, and when `NO_UPDATE_NOTIFIER` is set.
+
+## [1.0.6]
 
 ### Fixed
 

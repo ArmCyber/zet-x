@@ -308,6 +308,19 @@ x <command> --help  # command-specific help
 
 When `autoPublishIde()` is called in your config, `x` regenerates `.x/index.d.ts` with TypeScript declarations for IDE support on every run. This happens silently and never breaks normal operation. You can also generate types on demand with `x cli publish ide`.
 
+### Update Check
+
+Once a day `x` asks the npm registry, in the background, whether a newer version of `zet-x` has been published. When there is one, a note is printed after your command finishes:
+
+```
+x: an update is available: 1.0.6 → 1.0.7
+Please run "npm install -g zet-x" to update.
+```
+
+It is only a note — nothing is installed for you and nothing is blocked. The check never slows down or fails a command: if npm is unreachable or you are offline it is skipped silently and tried again on the next run.
+
+The check is skipped entirely when stderr is not a terminal (pipes, scripts), in CI, and when the `NO_UPDATE_NOTIFIER` environment variable is set. The last result is cached in `~/.cache/zet-x/update-check.json` (or under `$XDG_CACHE_HOME`).
+
 ## Full Example
 
 ```js

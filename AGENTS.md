@@ -31,11 +31,14 @@ src/              TypeScript source (compiled to dist/)
   loader.ts       ESM resolve hook (maps 'zet-x' → ./index.js)
   register.ts     Registers the loader hook via module.registerHooks(), falling back to module.register() on older Node
   runner.ts       Entry point spawned by bin/x.mjs — imports config, calls init()
+  update-check.ts Daily npm update check — state file, due/enabled rules, registry fetch, note
+  update-worker.ts  Detached process that fetches the latest version and writes the state file
 dist/             Compiled JS output (gitignored)
 bin/x.mjs         CLI entry point (not compiled, stays .mjs)
 test/
   x.test.mjs      Unit tests
   integration.test.mjs  Integration tests (spawns bin/x.mjs against temp dirs)
+  update-check.test.mjs  Update check tests (local HTTP server stands in for the npm registry)
 ```
 
 ## Architecture
@@ -46,7 +49,7 @@ test/
 bin/x.mjs  →  spawns child process  →  dist/runner.js  →  imports x.config.mjs  →  calls init()
 ```
 
-1. **`bin/x.mjs`** — CLI entry. Handles `x init` and `x cli init-completion` before config search. Walks up from CWD to find `x.config.mjs`. Detects Node version for ESM loader strategy (`--import` + register for >=18.19/>=20.6, `--loader` for older). Spawns runner with `X_ROOT_DIR` env var.
+1. **`bin/x.mjs`** — CLI entry. Handles `x init` and `x cli init-completion` before config search. Walks up from CWD to find `x.config.mjs`. Detects Node version for ESM loader strategy (`--import` + register for >=18.19/>=20.6, `--loader` for older). Calls `startUpdateCheck()` (see Update check), spawns runner with `X_ROOT_DIR` env var, and prints the update note after the runner exits.
 
 2. **`src/loader.ts`** — ESM resolve hook. Maps bare specifier `'zet-x'` to `./index.js`.
 
@@ -70,6 +73,17 @@ bin/x.mjs  →  spawns child process  →  dist/runner.js  →  imports x.config
 - **Error handling** — `uncaughtException`/`unhandledRejection` format errors with filtered stack. Unknown commands suggest closest match via Levenshtein distance.
 - **Auto-types** — `regenerateTypes()` writes `.x/index.d.ts` when `autoPublishIde()` is called in config (opt-in). Silently fails.
 
+### Update check
+
+`src/update-check.ts`, driven from `bin/x.mjs` (the runner is not involved). A note only — never blocks, delays or fails a command, and never prints an error.
+
+- **State** — `$XDG_CACHE_HOME/zet-x/update-check.json` (default `~/.cache/zet-x/`): `{ lastCheck, latest, pending }`. `lastCheck` is the time of the last *successful* check, `latest` the version it saw, `pending` the start time of a check that may still be running.
+- **Check** — `requestUpdateCheck()` runs before the command. If `lastCheck` is 24h+ old and no check is in flight (`isCheckDue()`), it stamps `pending` and spawns `dist/update-worker.js` detached (`stdio: "ignore"`, `unref()`), so the CLI never waits on the network.
+- **Worker** — `refreshUpdateState()` GETs `https://registry.npmjs.org/zet-x/latest` (5s timeout). Success writes `lastCheck` + `latest`. Any failure (offline, DNS, timeout, non-200, bad JSON) only clears `pending`, leaving `lastCheck` untouched so the next run checks again.
+- **Note** — after the runner exits, `getUpdateNotice()` re-reads the state and prints to stderr when `latest` is newer than the installed version (`isNewerVersion()`). It shows on every run until the user updates. `latest` must match `VERSION_RE` before it is printed.
+- **Disabled** (`isUpdateCheckEnabled()`) — stderr not a TTY, `CI` set, `NO_UPDATE_NOTIFIER` set, `--completions`, or `X_ROOT_DIR` already set (an `x` started from inside an `x` command — only the outermost one reports). `x init`, `--version` and `cli init-completion` exit before the check.
+- `node:http(s)` is imported lazily inside `fetchLatestVersion()` so only the worker loads it. The `http:` branch exists for tests.
+
 See README.md for complete API reference tables.
 
 ## Built-in CLI Commands
@@ -89,6 +103,7 @@ Reserved names: `init`, `cli`. Both `register()` and `group()` throw on these.
 
 - **`test/x.test.mjs`** — Unit tests. Imports from `dist/index.js`. Tests parsing, groups, templates, CommandOutput, help, buildRunParts, expandRestSymbol, CommandBuilder.run (tagged template and variadic), .userCwd.
 - **`test/integration.test.mjs`** — Spawns `bin/x.mjs` against temp dirs. Uses `realpathSync` for macOS `/tmp` symlink. `writeConfig()` replaces `'zet-x'` with direct dist path. All tests set `NO_COLOR=1`.
+- **`test/update-check.test.mjs`** — Imports from `dist/update-check.js`. Never touches the real registry or the real cache: a local `http` server (or a closed port, for "npm is down") is passed as the URL and state files live in temp dirs. `requestUpdateCheck` tests spawn the real detached worker. Spawned `bin/x.mjs` has piped stderr, so the update check is always off in the other test files.
 
 ## Conventions
 
