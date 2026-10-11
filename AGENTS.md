@@ -71,6 +71,7 @@ bin/x.mjs  →  spawns child process  →  dist/runner.js  →  imports x.config
 - **`flattenParts(parts)`** — For `.run()` variadic mode. Recursively flattens `TemplateResult` and arrays into string[].
 - **`RESERVED_NAMES`** — `new Set(["init", "cli"])`. Blocked in `register()` and `group()`.
 - **Error handling** — `uncaughtException`/`unhandledRejection` format errors with filtered stack. Unknown commands suggest closest match via Levenshtein distance.
+- **Signals** — `bin/x.mjs` forwards SIGINT/SIGTERM to the runner. When the runner dies from a signal, the bin removes its own handler for it and re-raises it, so `x` ends by that signal instead of exiting 0 (a 0 would let `x build && x deploy` carry on after Ctrl+C).
 - **Auto-types** — `regenerateTypes()` writes `.x/index.d.ts` when `autoPublishIde()` is called in config (opt-in). Silently fails.
 
 ### Update check

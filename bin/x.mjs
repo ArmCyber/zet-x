@@ -159,6 +159,8 @@ process.on("SIGINT", () => child.kill("SIGINT"));
 child.on("close", (code, signal) => {
   printUpdateNotice();
   if (signal) {
+    // Drop our forwarding handler first, or it swallows the re-raised signal and we exit 0
+    process.removeAllListeners(signal);
     process.kill(process.pid, signal);
   } else {
     process.exit(code ?? 1);

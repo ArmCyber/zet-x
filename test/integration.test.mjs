@@ -1192,3 +1192,33 @@ db.register('seed', 'Seed database').run('echo', 'seeding');
     assert.doesNotMatch(result.stdout, /hello/);
   });
 });
+
+describe("signals", () => {
+  for (const signal of ["SIGINT", "SIGTERM"]) {
+    it(`ends by ${signal} when the running command is stopped by it`, async () => {
+      const dir = tmpDir();
+      writeConfig(
+        dir,
+        `
+import { register } from 'zet-x';
+register('wait')
+  .callback(async () => {
+    process.stdout.write('ready');
+    await new Promise((resolve) => setTimeout(resolve, 20000));
+  });
+`
+      );
+      const child = spawn(process.execPath, [BIN, "wait"], {
+        cwd: dir,
+        stdio: ["ignore", "pipe", "pipe"],
+        env: { ...process.env, NO_COLOR: "1" },
+      });
+      child.stdout.once("data", () => child.kill(signal));
+      const result = await new Promise((resolve) => {
+        child.on("close", (code, sig) => resolve({ code, signal: sig }));
+      });
+      // Exiting 0 here would let `x build && x deploy` carry on after Ctrl+C
+      assert.deepEqual(result, { code: null, signal });
+    });
+  }
+});

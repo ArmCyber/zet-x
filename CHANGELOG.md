@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.8]
+
+### Fixed
+
+- `x` exited with code 0 when it was interrupted with Ctrl+C or terminated, so in `x build && x deploy` the next command still ran. It now ends by the same signal, like any other interrupted command.
+
 ## [1.0.7]
 
 ### Added
